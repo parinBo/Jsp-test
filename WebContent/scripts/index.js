@@ -1,89 +1,5 @@
 var table = $('#tbdDemo').DataTable();
 var counter = 1;
-$(document).ready(function() {
-    var oldcounter =0;
-    var oldno=0;
-    var realA =0;
-    dataTable=[]
-    // $("#addForm").submit(function() {
-    //     var fname = $("#fname").val()
-    //     var lname = $("#lname").val()
-    //     var birth = $("#date").val()
-    //     var sex = $("#sex").val() 
-    //     var age = $("#age").val()
-    //     table.row.add( [counter,"10"+counter,fname+"   "+lname,birth,age,sex,moment().format("DD MMM YYYY "),"me",
-    //     `<div class="row" ><button class="btn btn-primary nbtn edit" id="${counter}" >Edit</button>`+
-    //     `<button class="btn btn-danger nbtn btnDelete" id="del" >Del</button></div>`
-    //     ] ).draw( false );
-    //     counter++;
-    //     $('#addModal').modal('hide');
-    //     return false; 
-    // });
-
-    // $("#editForm").submit(function() {
-    //     var fname = $("#fname2").val()
-    //     var lname = $("#lname2").val()
-    //     var birth = $("#date2").val()
-    //     var age = $("#age2").val()
-    //     var sex = $("#sex2").val() 
-    //     table.row(oldcounter-1).remove().draw(false)
-    //     table.row.add( [oldcounter,oldno,fname+"   "+lname,birth,age,sex,moment().format("DD MMM YYYY "),"me",
-    //     `<div class="row" ><button class="btn btn-primary nbtn edit" id="${counter}" >Edit</button>`+
-    //     `<button class="btn btn-danger nbtn btnDelete" id="del" >Del</button></div>`
-    //     ] ).draw( false );
-    //     $('#editModal').modal('hide');
-    //     return false; 
-    // });
-
-    //delete row
-    $('#tbdDemo tbody').on( 'click', '#del', function () {
-        table.row( $(this).parents('tr')).remove().draw();
-    } );
-
-    
-    $('#tbdDemo').on( 'click', '.edit', function () {
-        $('#editModal').modal('toggle');
-        index = ($(this).context.id)-1
-        data = table.row(index).data()
-        nname = data[2].split("   ")
-        oldcounter = data[0]
-        oldno = data[1]
-        $("#fname2").val(nname[0])
-        $("#lname2").val(nname[1])
-        $("#date2").val(data[3])
-        $("#age2").val(data[4])
-        $("#sex2").val(data[5]) 
-    } );
-
-   
-});
-function ageCount1() {
-    var now =new Date();                           
-    var currentY= now.getFullYear();                
-    var currentM= now.getMonth();                   
-
-    var user =document.getElementById("date").value; 
-    var dob= new Date(user);                             
-    var prevY= dob.getFullYear();                         
-    var prevM= dob.getMonth();                            
-    var ageY =currentY - prevY;
-    $("#age").val(ageY)
-}  
-
-function ageCount2() {
-    var now =new Date();                           
-    var currentY= now.getFullYear();                
-    var currentM= now.getMonth();                   
-
-    var user =document.getElementById("date2").value; 
-    var dob= new Date(user);                             
-    var prevY= dob.getFullYear();                         
-    var prevM= dob.getMonth();                            
-      
-    var ageY =currentY - prevY;
-    $("#age2").val(ageY)
-}  
-
 function tbdDemoDataTable(data) {
 	var table = $("#tbdDemo").DataTable({
 		destroy: true,
@@ -155,7 +71,7 @@ function tbdDemoDataTable(data) {
 				class : "lb-txt-center",
                 render : function(data, type, row, meta) {
 					return `<div class="row">
-					<button type="button" class="btn btn-primary" onclick="editRow(${meta.row})">Edit</button>
+					<button type="button" class="btn btn-primary" onclick="editRow(${meta.row})" data-toggle="modal" data-target="#addModal" >Edit</button>
 					<button type="button" class="btn btn-danger" onclick="deleteRow(${meta.row})" >Delete</button>
 					</div>`
 				},
@@ -165,65 +81,87 @@ function tbdDemoDataTable(data) {
 	});
 }
 
-//
-function getDataTable(){
-	var datas = [];
-	table.rows().eq(0).each( function ( index ) {
-	    var row = table.row( index );
-	    var data = row.data();
-	    datas.push(data);
-	} );
-	console.log("Datas>>",datas);
-}
 var datas = [];
+
 function addRow(){
-	//NEW ROW
+	
+	document.getElementById("date").max = new Date(Date.now())
 	var jsonObj = new Object();
-	jsonObj.counter = counter;
-    jsonObj.no = "aa"+counter
+	counterVal = $("#counter").val()
+	if(counterVal===""){
+		console.log("nohave")
+		jsonObj.counter = counter;
+		jsonObj.no = "number:"+counter
+		counter++
+	}else{
+		datas = datas.filter(ele=>ele.counter!=counterVal)
+		jsonObj.counter = counterVal
+		jsonObj.no = "number:"+counterVal
+	}
 	jsonObj.name = $("#fname").val()+" "+$("#lname").val()
 	jsonObj.birth = $("#date").val()
+	jsonObj.age=$("#age").val()
 	jsonObj.sex = $("#sex").val()
 	jsonObj.date = moment().format("DD MMM YYYY ")
 	jsonObj.who = "me"
-    datas.push(jsonObj)
-	counter++
+	datas.push(jsonObj)
+	datas.sort((a,b)=>a.counter-b.counter)
     tbdDemoDataTable(datas)
-	//LOOOP GET EXISTING DATATABLE
-    
-	// var table = $('#tbdDemo').DataTable();
-	// table.rows().eq(0).each( function ( index ) {
-	//     var row = table.row( index );
-	//     var data = row.data();
+	$('#form').trigger("reset");
 
-	//     datas.push(data);
-	// } );
-	
-	//Push new row
-	// if(datas.length > 0){
-	// 	table.row.add(jsonObj).draw( false );
-	// }else{
-	// 	datas.push(jsonObj);
-	// 	tbdDemoDataTable(datas);
-	// }
 }
 
 function editRow(index){
 	var table = $('#tbdDemo').DataTable();	
-	var rowData = table.row( index ).data();
-	console.log("editRow>>",rowData);
-	
-	$("#inCode").val(rowData.rcode);
-	$("#inName").val(rowData.rname);
-	$("#inDesc").val(rowData.rdesc);
-	$("#inFlg").val(rowData.rflg);
+	var row =  table.row( index )
+	var rowData = row.data();
+	dataName = rowData.name.split(" ")
+	$("#counter").val(rowData.counter)
+	$("#fname").val(dataName[0])
+	$("#lname").val(dataName[1])
+	$("#date").val(rowData.date)
+	$("#age").val(rowData.age)
+	$("#sex").val(rowData.sex)
 }
 
 function deleteRow(index){
-	var table = $('#tbdDemo').DataTable();	
-	var rowData = table.row( index ).data();
 	table.row(index).remove().draw();
-	//tbdDemoDataTable(table.rows().data());
 }
 
-//
+function ageCount() {
+    var now =new Date();                           
+    var currentY= now.getFullYear();                
+    var currentM= now.getMonth();  
+	var currentD= now.getDate()            
+    var date =new Date(document.getElementById("date").value) 
+	var bY = date.getFullYear()
+	var bM = date.getMonth()
+	var bD = date.getDate()
+	yDiff=currentY-bY
+	mDiff=currentM-bM
+	dDiff=bD-currentD
+	if(mDiff<0||(mDiff==0&&dDiff>0)){
+		console.log("increase")
+		yDiff--
+	}
+    $("#age").val(yDiff)
+}  
+
+function search(){
+	type=$("#search_option").val()
+	data=$("#search_text").val()
+
+	if(type=="ลำดับที่"){
+		datas = datas.filter(e=>e.counter==data)
+	}
+	if(type=="รหัส"){
+		datas = datas.filter(e=>e.no==data)
+	}
+	if(type=="อายุ"){
+		datas = datas.filter(e=>e.age==data)
+	}
+	if(type=="เพศ"){
+		datas = datas.filter(e=>e.sex==data)
+	}
+	tbdDemoDataTable(datas)
+}
