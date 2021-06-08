@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<!--
+Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
+For licensing, see LICENSE.md or http://ckeditor.com/license
+-->
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Full Page Editing &mdash; CKEditor Sample</title>
+	<script src="../../../ckeditor.js"></script>
+	<script src="../../../jquery.js"></script>
+	<script src="../../../jquery.base64.js"></script>
+	<script src="../../../jquery.blockUI.js"></script>
+
+	
+	<script src="../../../textarea-helper.js"></script>
+	<script src="../../../pdfobject12.js"></script>
+	<script src="../../../samples/sample.js"></script>
+	<script src="../../../jqueryui/ui/minified/jquery-ui.min.js"></script>
+	<link rel="stylesheet" href="../../../jqueryui/themes/base/jquery-ui.css" />
+	<link rel="stylesheet" href="../../../samples/sample.css">
+	
+	<meta name="ckeditor-sample-required-plugins" content="sourcearea">
+	<meta name="ckeditor-sample-name" content="Full page support">
+	<meta name="ckeditor-sample-group" content="Plugins">
+	<meta name="ckeditor-sample-description" content="CKEditor inserted with a JavaScript call and used to edit the whole page from &lt;html&gt; to &lt;/html&gt;.">
+	<style>
+	
+	p {
+	text-align: justify;
+	-webkit-hyphens: auto;
+   	-moz-hyphens: auto;
+	hyphens: auto;
+}
+	​
+	
+	</style>
+
+<script>
+
+
+
+$.maxZIndex = $.fn.maxZIndex = function(opt) {
+    /// <summary>
+    /// Returns the max zOrder in the document (no parameter)
+    /// Sets max zOrder by passing a non-zero number
+    /// which gets added to the highest zOrder.
+    /// </summary>    
+    /// <param name="opt" type="object">
+    /// inc: increment value, 
+    /// group: selector for zIndex elements to find max for
+    /// </param>
+    /// <returns type="jQuery" />
+    var def = { inc: 10, group: "*" };
+    $.extend(def, opt);    
+    var zmax = 0;
+    $(def.group).each(function() {
+        var cur = parseInt($(this).css('z-index'));
+        zmax = cur > zmax ? cur : zmax;
+    });
+    if (!this.jquery)
+        return zmax;
+
+    return this.each(function() {
+        zmax += def.inc;
+        $(this).css("z-index", zmax);
+    });
+}
+function getTextNodes( element ) {
+    var children = element.getChildren(),
+        child;
+
+    for ( var i = children.count(); i--; ) {
+        child = children.getItem( i );
+        if ( child.type == CKEDITOR.NODE_ELEMENT ) 
+            getTextNodes( child );
+        else if ( child.type == CKEDITOR.NODE_TEXT )
+            textNodes.push( child );
+    }
+}
+
+var getCaretYPosition = function(){debugger;
+    var editor = CKEDITOR.instances.editor1, //get your CKEDITOR instance here
+        sel = editor.getSelection(), // text selection
+        obj = sel.getStartElement().$, // the element the selected text resides in
+        range = editor.getSelection().getRanges(), // range of selection
+        container = range[0].startContainer.$, // get the DOM node of the selected text, probably a textnode
+        textlen = typeof obj.textContent === "undefined" ? obj.innerText.length : obj.textContent.length, // get the length of the text in the container
+        offset = range[0].startOffset; // get the offset from the beginning of the text in the container to the caret
+    if (container.nodeType === 3) { // if the container is a text node
+        while (container.previousSibling) { // add the length of all the preceding text nodes and elements in the same parent element
+            container = container.previousSibling;
+            if (container.length) {
+                offset += container.length; // this is for text nodes
+            } else {
+            	try{
+                 offset += container.textContent ? container.textContent.length : container.innerText.length; // this is for HTML elements
+            	}catch(err){
+            		
+            	}
+            }
+        }
+    }
+    var pct = textlen > 0 ? offset / textlen : 0, // the percentage of the caret position
+        cursor = Math.floor(obj.offsetHeight * pct); // multiply elem height by percentage of carets position for caret's offset in pixels
+
+    while (obj.offsetParent) { // add all the offsets of all of its parents to get the complete offset of the caret from document origin
+       cursor += obj.offsetTop;
+       obj = obj.offsetParent;
+    }
+    cursor += obj.offsetTop;
+
+    return cursor;
+}
+
+function fitStringToWidth(str,width,className) {
+	  // str    A string where html-entities are allowed but no tags.
+	  // width  The maximum allowed width in pixels
+	  // className  A CSS class name with the desired font-name and font-size. (optional)
+	  // ----
+	  // _escTag is a helper to escape 'less than' and 'greater than'
+	  function _escTag(s){ return s.replace("<","&lt;").replace(">","&gt;");}
+
+	  //Create a span element that will be used to get the width
+	  var span = document.createElement("span");
+	  //Allow a classname to be set to get the right font-size.
+	  if (className) span.className=className;
+	  span.style.display='inline';
+	  span.style.visibility = 'hidden';
+	  span.style.padding = '0px';
+	  document.body.appendChild(span);
+
+	  var result = _escTag(str); // default to the whole string
+	  span.innerHTML = result;
+	  // Check if the string will fit in the allowed width. NOTE: if the width
+	  // can't be determinated (offsetWidth==0) the whole string will be returned.
+	  debugger;
+	  if (span.offsetWidth > width) {
+	    var posStart = 0, posMid, posEnd = str.length, posLength;
+	    // Calculate (posEnd - posStart) integer division by 2 and
+	    // assign it to posLength. Repeat until posLength is zero.
+	    while (posLength = (posEnd - posStart) >> 1) {
+	      posMid = posStart + posLength;
+	      //Get the string from the begining up to posMid;
+	      span.innerHTML = _escTag(str.substring(0,posMid)) + '&hellip;';
+
+	      // Check if the current width is too wide (set new end)
+	      // or too narrow (set new start)
+	      if ( span.offsetWidth > width ) posEnd = posMid; else posStart=posMid;
+	    }
+
+	    result = '<abbr title="' +
+	      str.replace("\"","&quot;") + '">' +
+	      _escTag(str.substring(0,posStart)) +
+	      '&hellip;<\/abbr>';
+	  }
+	  document.body.removeChild(span);
+	  return result;
+	}
+function ApplyLineBreaks(strTextAreaId) {
+    var oTextarea = document.getElementById(strTextAreaId);
+    if (oTextarea.wrap) {
+        oTextarea.setAttribute("wrap", "off");
+    }
+    else {
+        oTextarea.setAttribute("wrap", "off");
+        var newArea = oTextarea.cloneNode(true);
+        newArea.value = oTextarea.value;
+        oTextarea.parentNode.replaceChild(newArea, oTextarea);
+        oTextarea = newArea;
+    }
+
+    var strRawValue = oTextarea.value;
+    oTextarea.value = "";
+    var nEmptyWidth = oTextarea.scrollWidth;
+    var nLastWrappingIndex = -1;
+
+    function testBreak(strTest) {
+        oTextarea.value = strTest;
+        return oTextarea.scrollWidth > nEmptyWidth;
+    }
+    function findNextBreakLength(strSource, nLeft, nRight) {
+        var nCurrent;
+        if(typeof(nLeft) == 'undefined') {
+            nLeft = 0;
+            nRight = -1;
+            nCurrent = 64;
+        }
+        else {
+            if (nRight == -1)
+                nCurrent = nLeft * 2;
+            else if (nRight - nLeft <= 1)
+                return Math.max(2, nRight);
+            else
+                nCurrent = nLeft + (nRight - nLeft) / 2;
+        }
+        var strTest = strSource.substr(0, nCurrent);
+        var bLonger = testBreak(strTest);
+        if(bLonger)
+            nRight = nCurrent;
+        else
+        {
+            if(nCurrent >= strSource.length)
+                return null;
+            nLeft = nCurrent;
+        }
+        return findNextBreakLength(strSource, nLeft, nRight);
+    }
+
+    var i = 0, j;
+    var strNewValue = "";
+    while (i < strRawValue.length) {
+        var breakOffset = findNextBreakLength(strRawValue.substr(i));
+        if (breakOffset === null) {
+            strNewValue += strRawValue.substr(i);
+            break;
+        }
+        nLastWrappingIndex = -1;
+        var nLineLength = breakOffset - 1;
+        for (j = nLineLength - 1; j >= 0; j--) {
+            var curChar = strRawValue.charAt(i + j);
+            if (curChar == ' ' || curChar == '-' || curChar == '+') {
+                nLineLength = j + 1;
+                break;
+            }
+        }
+        strNewValue += strRawValue.substr(i, nLineLength) + "\n";
+        i += nLineLength;
+    }
+    oTextarea.value = strNewValue;
+    oTextarea.setAttribute("wrap", "");
+   // document.getElementById("pnlPreview").innerHTML = oTextarea.value.replace(new RegExp("\\n", "g"), "<br />");
+   console.log( oTextarea.value.replace(new RegExp("\\n", "g"), "<br />"));
+}
+</script>
+</head>
+
+<body>
+	<h1 class="samples">
+		<a href="../../../samples/index.html">CKEditor Samples</a> &raquo; Full Page Editing
+	</h1>
+	<div class="description">
+		<p>
+			This sample shows how to configure CKEditor to edit entire HTML pages, from the
+			<code>&lt;html&gt;</code> tag to the <code>&lt;/html&gt;</code> tag.
+		</p>
+		<p>
+			The CKEditor instance below is inserted with a JavaScript call using the following code:
+		</p>
+<pre class="samples">
+CKEDITOR.replace( '<em>textarea_id</em>', {
+	<strong>fullPage: true</strong>,
+	<strong>allowedContent: true</strong>
+});
+</pre>
+		<p>
+			Note that <code><em>textarea_id</em></code> in the code above is the <code>id</code> attribute of
+			the <code>&lt;textarea&gt;</code> element to be replaced.
+		</p>
+		<p>
+			The <code><em>allowedContent</em></code> in the code above is set to <code>true</code> to disable content filtering.
+			Setting this option is not obligatory, but in full page mode there is a strong chance that one may want be able to freely enter any HTML content in source mode without any limitations.
+		</p>
+	</div>
+	<form action="../../../samples/sample_posteddata.php" method="post">
+		<label for="editor1">
+			CKEditor output the entire page including content outside of
+			<code>&lt;body&gt;</code> element, so content like meta and title can be changed:
+		</label>
+		<textarea cols="80" id="editor1" name="editor1" rows="10" >
+			&lt;h1&gt;&lt;img align=&quot;right&quot; alt=&quot;Saturn V carrying Apollo 11&quot; src=&quot;http://localhost:8080/TestCKEditor/ckeditor4.3.5/samples/assets/sample.jpg&quot;/&gt; Apollo 11&lt;/h1&gt; &lt;p&gt;&lt;b&gt;Apollo 11&lt;/b&gt; was the spaceflight<br/> that landed the first humans, Americans &lt;a href=&quot;http://en.wikipedia.org/wiki/Neil_Armstrong&quot; title=&quot;Neil Armstrong&quot;&gt;Neil Armstrong&lt;/a&gt; and &lt;a href=&quot;http://en.wikipedia.org/wiki/Buzz_Aldrin&quot; title=&quot;Buzz Aldrin&quot;&gt;Buzz Aldrin&lt;/a&gt;, on the Moon on July 20, 1969, at 20:18 UTC. Armstrong became the first to step onto the lunar surface 6 hours later on July 21 at 02:56 UTC.&lt;/p&gt; &lt;p&gt;Armstrong spent about &lt;s&gt;three and a half&lt;/s&gt; two and a half hours outside the spacecraft, Aldrin slightly less; and together they collected 47.5 pounds (21.5&amp;nbsp;kg) of lunar material for return to Earth. A third member of the mission, &lt;a href=&quot;http://en.wikipedia.org/wiki/Michael_Collins_(astronaut)&quot; title=&quot;Michael Collins (astronaut)&quot;&gt;Michael Collins&lt;/a&gt;, piloted the &lt;a href=&quot;http://en.wikipedia.org/wiki/Apollo_Command/Service_Module&quot; title=&quot;Apollo Command/Service Module&quot;&gt;command&lt;/a&gt; spacecraft alone in lunar orbit until Armstrong and Aldrin returned to it for the trip back to Earth.&lt;/p&gt; &lt;h2&gt;Broadcasting and &lt;em&gt;quotes&lt;/em&gt; &lt;a id=&quot;quotes&quot; name=&quot;quotes&quot;&gt;&lt;/a&gt;&lt;/h2&gt; &lt;p&gt;Broadcast on live TV to a world-wide audience, Armstrong stepped onto the lunar surface and described the event as:&lt;/p&gt; &lt;blockquote&gt;&lt;p&gt;One small step for [a] man, one giant leap for mankind.&lt;/p&gt;&lt;/blockquote&gt; &lt;p&gt;Apollo 11 effectively ended the &lt;a href=&quot;http://en.wikipedia.org/wiki/Space_Race&quot; title=&quot;Space Race&quot;&gt;Space Race&lt;/a&gt; and fulfilled a national goal proposed in 1961 by the late U.S. President &lt;a href=&quot;http://en.wikipedia.org/wiki/John_F._Kennedy&quot; title=&quot;John F. Kennedy&quot;&gt;John F. Kennedy&lt;/a&gt; in a speech before the United States Congress:&lt;/p&gt; &lt;blockquote&gt;&lt;p&gt;[...] before this decade is out, of landing a man on the Moon and returning him safely to the Earth.&lt;/p&gt;&lt;/blockquote&gt; &lt;h2&gt;Technical details &lt;a id=&quot;tech-details&quot; name=&quot;tech-details&quot;&gt;&lt;/a&gt;&lt;/h2&gt; &lt;table align=&quot;right&quot; border=&quot;1&quot; bordercolor=&quot;#ccc&quot; cellpadding=&quot;5&quot; cellspacing=&quot;0&quot; style=&quot;border-collapse:collapse;margin:10px 0 10px 15px;&quot;&gt; &lt;caption&gt;&lt;strong&gt;Mission crew&lt;/strong&gt;&lt;/caption&gt; &lt;thead&gt; &lt;tr&gt; &lt;th scope=&quot;col&quot;&gt;Position&lt;/th&gt; &lt;th scope=&quot;col&quot;&gt;Astronaut&lt;/th&gt; &lt;/tr&gt; &lt;/thead&gt; &lt;tbody&gt; &lt;tr&gt; &lt;td&gt;Commander&lt;/td&gt; &lt;td&gt;Neil A. Armstrong&lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt;Command Module Pilot&lt;/td&gt; &lt;td&gt;Michael Collins&lt;/td&gt; &lt;/tr&gt; &lt;tr&gt; &lt;td&gt;Lunar Module Pilot&lt;/td&gt; &lt;td&gt;Edwin &amp;quot;Buzz&amp;quot; E. Aldrin, Jr.&lt;/td&gt; &lt;/tr&gt; &lt;/tbody&gt; &lt;/table&gt; &lt;p&gt;Launched by a &lt;strong&gt;Saturn V&lt;/strong&gt; rocket from &lt;a href=&quot;http://en.wikipedia.org/wiki/Kennedy_Space_Center&quot; title=&quot;Kennedy Space Center&quot;&gt;Kennedy Space Center&lt;/a&gt; in Merritt Island, Florida on July 16, Apollo 11 was the fifth manned mission of &lt;a href=&quot;http://en.wikipedia.org/wiki/NASA&quot; title=&quot;NASA&quot;&gt;NASA&lt;/a&gt;&amp;#39;s Apollo program. The Apollo spacecraft had three parts:&lt;/p&gt; &lt;ol&gt; &lt;li&gt;&lt;strong&gt;Command Module&lt;/strong&gt; with a cabin for the three astronauts which was the only part which landed back on Earth&lt;/li&gt; &lt;li&gt;&lt;strong&gt;Service Module&lt;/strong&gt; which supported the Command Module with propulsion, electrical power, oxygen and water&lt;/li&gt; &lt;li&gt;&lt;strong&gt;Lunar Module&lt;/strong&gt; for landing on the Moon.&lt;/li&gt; &lt;/ol&gt; &lt;p&gt;After being sent to the Moon by the Saturn V&amp;#39;s upper stage, the astronauts separated the spacecraft from it and travelled for three days until they entered into lunar orbit. Armstrong and Aldrin then moved into the Lunar Module and landed in the &lt;a href=&quot;http://en.wikipedia.org/wiki/Mare_Tranquillitatis&quot; title=&quot;Mare Tranquillitatis&quot;&gt;Sea of Tranquility&lt;/a&gt;. They stayed a total of about 21 and a half hours on the lunar surface. After lifting off in the upper part of the Lunar Module and rejoining Collins in the Command Module, they returned to Earth and landed in the &lt;a href=&quot;http://en.wikipedia.org/wiki/Pacific_Ocean&quot; title=&quot;Pacific Ocean&quot;&gt;Pacific Ocean&lt;/a&gt; on July 24.&lt;/p&gt; &lt;hr/&gt; &lt;p style=&quot;text-align: right;&quot;&gt;&lt;small&gt;Source: &lt;a href=&quot;http://en.wikipedia.org/wiki/Apollo_11&quot;&gt;Wikipedia.org&lt;/a&gt;&lt;/small&gt;&lt;/p&gt;
+		</textarea>
+		<script>
+
+		CKEDITOR.replace( 'editor1', {
+				fullPage: true,
+				allowedContent: true,
+			//	extraPlugins: 'wysiwygarea',
+				autoParagraph : false,
+			//	extraPlugins : 'pagebreak',
+					 extraPlugins :'wysiwygarea,ajaxsave,docxsave,lineheight,richcombo,zoom,newbasicstyles,variables,showbr', 
+				// extraPlugins :'lineheight',
+				 enterMode: CKEDITOR.ENTER_BR, 
+				// extraAllowedContent: 'span(*)',
+				// forceEnterMode:false,
+				 line_height :'0.1em;0.5em;1em;1.1em;1.2em;1.3em;1.4em;1.5em',
+			//	 font_defaultLabel :'TH SarabunPSK',
+			//	 fontSize_defaultLabel : '22px',
+			pdfConfig : { 'url' : '/Html2Pdf/HtmlPageServlet', 'id' : 'showpdf' }, 
+			docxConfig : { 'url' : '/Html2Docx/DocxPageServlet', 'id' : 'showdocx' }, 
+			//baseHref : "http://localhost:8080/TestCKEditor",
+			tabSpaces :4,
+			 	
+				 toolbar:
+					 [
+					     { name: 'document', items : [ 'Source','-','Ajaxsave','NewPage','DocProps','Preview','Print','-','Templates' ] },
+					     { name: 'clipboard', items : [ 'Cut','Copy','Paste','PasteText','PasteFromWord','-','Undo','Redo' ] },
+					     { name: 'editing', items : [ 'Find','Replace','-','SelectAll','-','SpellChecker', 'Scayt' ] },
+					     { name: 'forms', items : [ 'Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton', 
+					          'HiddenField' ] },
+					     '/',
+					     { name: 'newbasicstyles', items : [ 'Bold','Italic','Underline','Strike','Subscript','Superscript','-','RemoveFormat' ,'Dotline','Double'] },
+					     { name: 'paragraph', items : [ 'NumberedList','BulletedList','-','Outdent','Indent','-','Blockquote','CreateDiv','-','JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock','-','BidiLtr','BidiRtl' ] },
+					     { name: 'links', items : [ 'Link','Unlink','Anchor' ] },
+					     { name: 'insert', items : [ 'Image','Flash','Table','HorizontalRule','Smiley','SpecialChar','PageBreak','Iframe' ] },
+					     '/',
+					     { name: 'styles', items : [ 'Styles','Format','Font','FontSize' ] },
+					     { name: 'colors', items : [ 'TextColor','BGColor' ] },
+					     { name: 'tools', items : [ 'Maximize', 'ShowBlocks','-','About','lineheight','Zoom','variables','Docxsave','Showbr'] }
+					 ]
+
+			});
+
+		</script>
+		<p>
+			<input type="submit" value="Submit">
+		</p>
+	</form>
+	<div id="footer">
+		<hr>
+		<p>
+			CKEditor - The text editor for the Internet - <a class="samples" href="http://ckeditor.com/">http://ckeditor.com</a>
+		</p>
+		<p id="copy">
+			Copyright &copy; 2003-2014, <a class="samples" href="http://cksource.com/">CKSource</a> - Frederico
+			Knabben. All rights reserved.
+		</p>
+	</div>
+	<script type="text/javascript">
+// ON CKEDITOR READY: Sets up page size and white colour background in edit area
+CKEDITOR.on('instanceReady', function(ev) {debugger;
+	var iframe = $('.cke_wysiwyg_frame').contents ();
+	iframe.find ('html').css ({
+		'background-color': '#b0b0b0'
+	});
+	/*  iframe.find ('body').css ({
+		'width': '185mm',//297
+		'min-height': '297mm', //was 210 **** 
+		'background-color': '#ffffff',
+		'margin-left': '0mm',
+		'padding': '15mm',
+		'font-family': 'TH SarabunPSK',
+	    'font-size': '22px'
+	//    'white-space': ($.browser.chrome)?'pre' :'normal'
+	});  */
+	iframe.find ('body').css ({ 
+		'background': 'white',//297
+		'display': 'block', //was 210 **** 
+		//'margin': '0 auto',
+		'margin-left': '0mm',
+		'margin-bottom':'0.5cm',
+		'box-shadow':'0 0 0.5cm rgba(0,0,0,0.5)',
+		'padding': '15mm',
+		'font-family': 'TH SarabunPSK',
+	    'font-size': '22px'
+	    	
+	}); 
+	     iframe.find ('body').css ({ //A4 portrait
+		'max-width': '21cm',
+    	'min-height': '29.7cm',
+    	'padding': '50px'
+
+	});     
+	  /* iframe.find ('body').css ({ //A4 landscape
+		'width': '29.7cm',
+    	'min-height': '21cm'
+
+	});  */
+	 
+	/*  iframe.find ('body').css ({ //A3 portrait
+			'width': '29.7cm',
+	    	'min-height': '42cm'
+
+		}); */
+	/*  iframe.find ('body').css ({ //A3 landscape
+				'width': '42cm',
+		    	'min-height': '29.7cm'
+
+			});   */
+	/* iframe.find ('body').css ({ //A5 portrait
+				'width': '14.8cm',
+		    	'min-height': '21cm'
+
+			}); 			 */
+	/* iframe.find ('body').css ({ //A5 landscape
+			'width': '21cm',
+	    	'min-height': '14.8cm'
+
+		}); 	 */	
+	iframe.find ('td').css ({
+		'padding': '-1px'
+	});
+	var htmlwidth = iframe.find ('html')[0];
+	var bodywidth = iframe.find ('body')[0];
+	//ev.editor.execCommand('maximize');   
+	
+	var cssrules =  $("<style type='text/css'> </style>");
+	cssrules.append(".dottedline{background: -moz-linear-gradient(left, black, black 50%, transparent 50%);"+
+								 "background: -ms-linear-gradient(left, black, black 50%, transparent 50%);"+
+								"background: -o-linear-gradient(left, black, black 50%, transparent 50%);"+
+								"background: -webkit-gradient(linear, 0 0, 100% 0, from(#f00), color-stop(0.5, black), color-stop(0.5, transparent));"+
+								"background: -webkit-linear-gradient(left, black, black 50%, transparent 50%);"+
+								"background: linear-gradient(left, black, black 50%, transparent 50%);"+ 
+							    "background-size: 2px 1px; background-position: 0 85%;background-repeat: repeat-x;}"); 
+	cssrules.append(".double{border-bottom: 1px solid #000;text-decoration: underline;}");
+	cssrules.append("@media screen {.page-break	{ height: 5px; color: white; font-weight: normal; background-color: rgb(176, 176, 176);width: 830px; margin-left:-100px; }.variable {background-color: rgba(0, 255, 0, 0.5);}}");
+	cssrules.append("@media print {	.page-break { height:0; page-break-before:always; margin:0; border-top:none; }}");
+	
+//	cssrules.append("page {background: white;display: block;margin: 0 auto;margin-bottom: 0.5cm;box-shadow: 0 0 0.5cm rgba(0,0,0,0.5);}");
+	iframe.find ('head').append(cssrules);
+
+	
+});
+//var NOTFOUND = "true";
+CKEDITOR.instances['editor1'].on('contentDom', function() {
+	var editable = CKEDITOR.instances['editor1'].editable();
+
+    editable.attachListener( CKEDITOR.instances['editor1'].document, 'keyup', function(event) {
+    	var paste =  (event.data.$.keyCode === 86 && event.data.$.ctrlKey);
+    	var key = event.data.$.keyCode || event.data.$.charCode;
+    //	 if( key != 8 && !event.data.$.ctrlKey && key != 32){
+  
+    	/* debugger
+    	 $( CKEDITOR.instances['editor1'].window.getFrame().$ ).contents().find(".page-break").remove();
+    	 var editor = CKEDITOR.instances['editor1']; //get your CKEDITOR instance here
+    	 var jqDocument = $(editor.document.$);
+ 	  	  var documentHeight =  $( CKEDITOR.instances['editor1'].window.getFrame().$ ).contents().find("body").height() ; 
+ 	  	  
+ 	  
+
+    	 var pageSize =  868;
+    	 var firstPage = 940;
+    	 if($.browser.chrome) {
+    		 pageSize =  908;
+      		firstPage = 992;
+         	} else if ($.browser.mozilla) {
+         		pageSize =  908;//908;
+         		firstPage = 992;//967;
+         		
+         	} else if ($.browser.msie) {//alert('ie');
+         		 pageSize =  870;//868;
+         		firstPage = 960;//940;
+         	}
+    	 
+    	 documentHeight = documentHeight - firstPage;
+    	 if(documentHeight>0)$( '<div style="position:absolute;top:'+firstPage+'px;" class="page-break"></div>' ).appendTo(  $( CKEDITOR.instances['editor1'].window.getFrame().$ ).contents().find("body") ); 
+    	 var noOfPage = Math.floor(documentHeight/pageSize);
+    	 for(var i = 1 ;i<= noOfPage;i++){
+    		 var nextPage = firstPage+(i*pageSize);
+    		 $( '<div style="position:absolute;top:'+nextPage+'px;" class="page-break"></div>' ).appendTo(  $( CKEDITOR.instances['editor1'].window.getFrame().$ ).contents().find("body") ); 
+    	 }
+    	  */
+    	//alert( $( CKEDITOR.instances['editor1'].window.getFrame().$ ).contents().find(".page-break").length );                   
+    	    //  var breakElement = CKEDITOR.dom.element.createFromHtml( '<div style="position:absolute;top:992px;" class="page-break"></div>' );
+    	   // var breakElement = CKEDITOR.dom.element.createFromHtml( ' <div style="position:absolute;width:100%;top:842px;border-top:1px solid red">&nbsp;</div>' );
+    	//  $( '<div style="position:absolute;top:992px;" class="page-break"></div><div style="position:absolute;top:1990px;" class="page-break"></div>' ).appendTo(  $( CKEDITOR.instances['editor1'].window.getFrame().$ ).contents().find("body") ); 
+    	
+    //	 }  
+ 	  	 
+ 	  	//  jqDocument.scrollTop(scrollTop);  
+    });  	
+    	 
+});
+
+
+	</script>
+
+<script>
+
+function toUnicode(theString) {
+	  var unicodeString = '';
+	  for (var i=0; i < theString.length; i++) {
+	    var theUnicode = theString.charCodeAt(i).toString(16).toUpperCase();
+	    while (theUnicode.length < 4) {
+	      theUnicode = '0' + theUnicode;
+	    }
+	    theUnicode = '\\u' + theUnicode;
+	    unicodeString += theUnicode;
+	  }alert(unicodeString);
+	  return unicodeString;
+	}
+function toHex(str) {
+	 hexentity =  str.replace(/./gm, function(s) {
+	        return "&#" + s.charCodeAt(0) + ";";
+
+	    });alert(hexentity)
+return "&#39640;&#32423;&#31243;&#24207;&#35774;&#35745;";
+  }
+var encodeHtmlEntity = function(b) {
+	var c= '';alert(b);
+	for(i=0; i<b.length; i++){
+		if(b.charCodeAt(i)>127){ c += '&#' + b.charCodeAt(i) + ';'; }else{ c += b.charAt(i); }
+  	}alert(c);
+return c;
+	};
+
+
+  $(document).ready(function() {
+	
+	
+  });
+
+</script>
+<div id="showpdf"  style="width:100%;height:300px;margin:2em auto;display:none;"></div>
+<div id="pnlPreview"></div>
+<div class="mycooldiv"></div>
+</body>
+</html>

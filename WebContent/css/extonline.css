@@ -1,0 +1,136 @@
+html {
+    height: 100%;
+}
+
+body {
+    font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 0;
+    height: 100%;
+}
+
+.input-align-txt-right {
+    text-align: right;
+}
+
+.input-align-txt-left {
+    text-align: left;
+}
+
+input, textarea {
+    border-radius: 3px !important;
+}
+
+.attach-file-name-space {
+    margin-left: 2.0525em;
+}
+
+table > thead > tr > th {
+    text-align: center !important;
+}
+
+.alert-container-message {
+    margin: 0 1.25em 0 1.25em;
+    padding: 0.150em;
+}
+
+.alert-container-message .alert-message {
+    font-size: medium;
+    color: #FFFFFF;
+    text-align: center;
+    position: relative;
+}
+
+.alert-panel {
+    border-radius: 8px;
+    background-color: #B00020;
+    height: auto;
+    display: none;
+    padding: 0 0.125em 0 0.125em;
+    min-width: 200px;
+    margin: 0 1em 0 1em;
+    position: relative;
+}
+
+.witness-panel {
+    border-radius: 8px;
+    padding: 0 0.125em 0 0.125em;
+    margin: 0 1em 0 1em;
+    position: fixed;
+}
+
+.form-control .field-radius {
+    border-radius: 5px;
+}
+
+.field-radius {
+    border-radius: 5px;
+    border-color: #a77a94;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    margin: 1.25rem;
+    box-sizing: border-box;
+    border-radius: 0.525rem;
+    transition: 0.3s;
+    box-shadow: 0 4px 8px 0 rgba(54, 127, 169, 0.8);
+    border: 1px solid #367fa9;
+}
+
+.card-case-info-body {
+    flex: 1 1 auto;
+    border-radius: 0.25rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex-grow: 1;
+    background-color: #367FA9;
+}
+
+.card-case-info-item {
+    flex: 1 1 auto;
+    margin: 0.6525rem;
+    border-radius: 0.25rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.dataTables_empty {
+    text-align: center;
+}
+
+.txt-right {
+    text-align: right;
+}
+
+.txt-left {
+    text-align: left;
+}
+
+.txt-center {
+    text-align: center;
+}
+
+.overlay-block {
+    z-index: 10000;
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(0, 0, 0, .6) 50% 50% no-repeat;
+}
+
+.loading-container {
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    display: flex;
+}
