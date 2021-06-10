@@ -49,11 +49,11 @@
                     <option value="เพศ">เพศ</option>
                 </select>
             </div>
-            <div class="col-xs-2">
-                <input type="text" class="form-control " id="search_text"  style="width:100%">
+            <div class="col-xs-3">
+                <input type="text" class="form-control " placeholder="Searching" id="search_text" onkeyup="searchData()" style="width:100%">
             </div>
-            <div class="col-xs-1">
-                <button class="btn btn-primary"  onclick="search()">ค้นหา</button>
+            <div class="col-xs-2">
+                <input type="text" class="form-control " placeholder="Global_search" id="search_textGlobal" onkeyup="globalSearch()" style="width:100%">
             </div>
         </div>
         <div class="row" style="padding: 3px;text-align: right;">
@@ -113,7 +113,7 @@
                             <label class="control-label">วันเกิด</label>
                         </div>
                         <div class="col-xs-3">
-                            <input type="date" id="date" class="form-control" onchange="ageCount()" style="width:100%"  >
+                            <input type="date" id="birth" class="form-control" onchange="ageCount()" style="width:100%"  >
                         </div>
                         <div class="col-xs-2">
                             <label class="control-label">อายุ</label>
@@ -150,5 +150,5 @@
       </div>
 </body>
 </html>
-<script src="<%=request.getContextPath()%>/scripts/index.js"></script>
-
+<script type="text/javascript" src="${pageContext.request.contextPath}/pages/scripts/boss.js"></script>
+<!-- <script type="text/javascript" src="${pageContext.request.contextPath}/pages/train3/script/user_boss.js"></script> -->

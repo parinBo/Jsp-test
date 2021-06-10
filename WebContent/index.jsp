@@ -156,8 +156,48 @@
             color: red;
             vertical-align: bottom;
         }
+        .nav-pills>li>a:hover {
+         background-color: #999;
+         color: white;
+         }
     </style>
 <body>
-  <jsp:include page="/pages/web-page.jsp"/>
+<nav class="navbar navbar-default navbar-fixed-top" style="background:"black";color:"wh>
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">เว็บจำลอง</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav nav-pills">
+		  <li id="boss"><a href="/test/main/boss.jsp" class="btn">Boss</a></li>
+		  <li id="rung"><a href="/test/main/rung.jsp">Rung</a></li>
+	</ul>
+    </div>
+    <div class="collapse navbar-collapse" id="myDIV">
+      
+    </div>
+  </div><!-- /.container-fluid -->
+</nav>
+<div style="margin-top:10rem;margin-bottom:10rem"></div>
+<script>
+if($(location).attr('href').indexOf("boss.jsp")!=-1){
+	$("#boss").addClass("active")
+}
+
+if($(location).attr('href').indexOf("rung.jsp")!=-1){
+	$("#rung").addClass("active")
+}
+
+
+</script>
 </body>
 </html>

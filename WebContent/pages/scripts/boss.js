@@ -1,5 +1,9 @@
 var table = $('#tbdDemo').DataTable();
 var counter = 1;
+var datas = [];
+$("#birth").attr({  
+	   "max" : moment().format("YYYY-MM-DD"),  
+	});  
 function tbdDemoDataTable(data) {
 	var table = $("#tbdDemo").DataTable({
 		destroy: true,
@@ -8,7 +12,7 @@ function tbdDemoDataTable(data) {
 		bInfo: false,
 		sInfo: false,
 		bSort: false,
-		bProcessing: true,
+		bProcessing: false,
 		autoWidth: false,
 		responsive: true,
 		data: data,
@@ -81,15 +85,11 @@ function tbdDemoDataTable(data) {
 	});
 }
 
-var datas = [];
 
 function addRow(){
-	
-	document.getElementById("date").max = new Date(Date.now())
 	var jsonObj = new Object();
 	counterVal = $("#counter").val()
 	if(counterVal===""){
-		console.log("nohave")
 		jsonObj.counter = counter;
 		jsonObj.no = "number:"+counter
 		counter++
@@ -99,7 +99,7 @@ function addRow(){
 		jsonObj.no = "number:"+counterVal
 	}
 	jsonObj.name = $("#fname").val()+" "+$("#lname").val()
-	jsonObj.birth = $("#date").val()
+	jsonObj.birth = $("#birth").val()
 	jsonObj.age=$("#age").val()
 	jsonObj.sex = $("#sex").val()
 	jsonObj.date = moment().format("DD MMM YYYY ")
@@ -116,16 +116,19 @@ function editRow(index){
 	var row =  table.row( index )
 	var rowData = row.data();
 	dataName = rowData.name.split(" ")
+	console.log(rowData)
 	$("#counter").val(rowData.counter)
 	$("#fname").val(dataName[0])
 	$("#lname").val(dataName[1])
-	$("#date").val(rowData.date)
+	$("#birth").val(rowData.birth)
 	$("#age").val(rowData.age)
 	$("#sex").val(rowData.sex)
 }
 
 function deleteRow(index){
-	table.row(index).remove().draw();
+	var data = $('#tbdDemo').DataTable().row(index).data()
+	datas = datas.filter(e=>e.counter != data.counter)
+	tbdDemoDataTable(datas)
 }
 
 function ageCount() {
@@ -133,7 +136,7 @@ function ageCount() {
     var currentY= now.getFullYear();                
     var currentM= now.getMonth();  
 	var currentD= now.getDate()            
-    var date =new Date(document.getElementById("date").value) 
+    var date =new Date(document.getElementById("birth").value) 
 	var bY = date.getFullYear()
 	var bM = date.getMonth()
 	var bD = date.getDate()
@@ -141,7 +144,6 @@ function ageCount() {
 	mDiff=currentM-bM
 	dDiff=bD-currentD
 	if(mDiff<0||(mDiff==0&&dDiff>0)){
-		console.log("increase")
 		yDiff--
 	}
     $("#age").val(yDiff)
@@ -159,9 +161,37 @@ function search(){
 	}
 	if(type=="อายุ"){
 		datas = datas.filter(e=>e.age==data)
-	}
+	}	
 	if(type=="เพศ"){
 		datas = datas.filter(e=>e.sex==data)
 	}
 	tbdDemoDataTable(datas)
 }
+
+function searchData() {
+
+	input = $("#search_text").val().toLowerCase();
+	type=$('#search_option').val()
+	dataTable = $("tbody tr")
+	dataTable.each(function(){
+		row = $(this).find("td")
+		if(type=="ลำดับที่") td=row[0]
+		if(type=="รหัส") td=row[1]
+		if(type=="อายุ") td=row[4]
+		if(type=="เพศ") td=row[5]
+
+		found = $(td).text().toLowerCase().indexOf(input) > -1
+		$(this).toggle(found)
+	})                                                                                          
+}
+
+function globalSearch(){
+	var value = $("#search_textGlobal").val().toLowerCase();
+	dataTable=$("tbody tr")
+	dataTable.each(function(){
+		found = $(this).text().toLowerCase().indexOf(value) > -1
+		$(this).toggle(found)
+	})
+}
+
+
