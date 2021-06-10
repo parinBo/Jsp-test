@@ -162,7 +162,7 @@
          }
     </style>
 <body>
-<nav class="navbar navbar-default navbar-fixed-top" style="background:"black";color:"wh>
+<nav class="navbar navbar-default navbar-fixed-top" style="background:black">
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
@@ -180,6 +180,7 @@
       <ul class="nav nav-pills">
 		  <li id="boss"><a href="/test/main/boss.jsp" class="btn">Boss</a></li>
 		  <li id="rung"><a href="/test/main/rung.jsp">Rung</a></li>
+          <li id="frong"><a href="/test/main/frong.jsp">Frong</a></li>
 	</ul>
     </div>
     <div class="collapse navbar-collapse" id="myDIV">
@@ -195,6 +196,9 @@ if($(location).attr('href').indexOf("boss.jsp")!=-1){
 
 if($(location).attr('href').indexOf("rung.jsp")!=-1){
 	$("#rung").addClass("active")
+}
+if($(location).attr('href').indexOf("frong.jsp")!=-1){
+	$("#frong").addClass("active")
 }
 
 
