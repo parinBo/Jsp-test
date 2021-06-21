@@ -1,9 +1,16 @@
 var table = $('#tbdDemo').DataTable();
 var counter = 1;
-var datas = [];
-$("#birth").attr({  
-	   "max" : moment().format("YYYY-MM-DD"),  
-	});  
+var datas = []; 
+init()
+function init(){
+	$("#birth").attr({  
+		"max" : moment().format("YYYY-MM-DD"),  
+	 }); 
+
+	console.log("test")
+	let data =  serviceCtrl("getAllUser","","get")
+
+}
 function tbdDemoDataTable(data) {
 	var table = $("#tbdDemo").DataTable({
 		destroy: true,
@@ -195,3 +202,29 @@ function globalSearch(){
 }
 
 
+function serviceCtrl(fn, json, type){
+	uri = "http://localhost:8778/bossCtrl/" + fn;
+	var result;
+	$.ajax({
+	    url: uri,
+	    type: type,
+	    contentType: "application/json;charset=utf-8",
+	    // headers: {
+	    //     "authorization": "Bearer " + getAccessToken()
+	    // },
+	    data: JSON.stringify(json),
+	    async: false,
+	    success: function (data, textStatus, jqXHR) {
+	    	console.log(data);
+            console.log(textStatus);
+            console.log(jqXHR);
+            result = data;
+	    },
+	    error: function (jqXHR, status, error) {
+	        console.error(jqXHR);
+	        result = {};
+	    }
+	});
+	
+	return result;
+}

@@ -172,15 +172,15 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">เว็บจำลอง</a>
+      <a class="navbar-brand" href="#" style="color: antiquewhite;">เว็บจำลอง</a>
     </div>
 
     <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav nav-pills">
-		  <li id="boss"><a href="/test/main/boss.jsp" class="btn">Boss</a></li>
-		  <li id="rung"><a href="/test/main/rung.jsp">Rung</a></li>
-          <li id="frong"><a href="/test/main/frong.jsp">Frong</a></li>
+		  <li id="boss"><a href="/test/main/boss.jsp" class="btn" style="color: antiquewhite;">Boss</a></li>
+		  <li id="rung"><a href="/test/main/rung.jsp" style="color: antiquewhite;">Rung</a></li>
+          <li id="frong"><a href="/test/main/frong.jsp" style="color: antiquewhite;">Frong</a></li>
 	</ul>
     </div>
     <div class="collapse navbar-collapse" id="myDIV">
