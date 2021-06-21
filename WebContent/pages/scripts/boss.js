@@ -1,16 +1,10 @@
 var table = $('#tbdDemo').DataTable();
 var counter = 1;
 var datas = []; 
-init()
-function init(){
-	$("#birth").attr({  
-		"max" : moment().format("YYYY-MM-DD"),  
-	 }); 
-
-	console.log("test")
-	let data =  serviceCtrl("getAllUser","","get")
-
-}
+$("#birth").attr({  
+	"max" : moment().format("YYYY-MM-DD"),  
+ });
+drawTableBygetAllUser() 
 function tbdDemoDataTable(data) {
 	var table = $("#tbdDemo").DataTable({
 		destroy: true,
@@ -26,13 +20,13 @@ function tbdDemoDataTable(data) {
 		columns:[
 			{
 				title : "ลำดับ",
-				data : "counter",
+				data : "id",
 				defaultContent : "",
 				class : "lb-txt-center", 
 			},
 			{
 				title : "รหัสผู้ใช้งาน",
-				data : "no",
+				data : "code",
 				defaultContent : "",
 				class : "lb-txt-center",
 			},
@@ -44,7 +38,7 @@ function tbdDemoDataTable(data) {
 			},
             {
                 title : "วันเกิด",
-				data : "birth",
+				data : "birthDate",
 				defaultContent : "",
 				class : "lb-txt-center",
 			},
@@ -63,7 +57,7 @@ function tbdDemoDataTable(data) {
             {
                 title : "วันที่บันทึก",
 				width : "10%",
-				data : "date",
+				data : "dateAt",
 				defaultContent : "",
 				class : "lb-txt-center",
 				
@@ -71,7 +65,7 @@ function tbdDemoDataTable(data) {
             {
                 title : "บันทึกโดย",
 				width : "10%",
-				data : "who",
+				data : "by",
 				defaultContent : "",
 				class : "lb-txt-center",
 				
@@ -92,30 +86,72 @@ function tbdDemoDataTable(data) {
 	});
 }
 
+function drawTableBygetAllUser(){
+	datas=[]
+	let data =  serviceCtrl("getAllUser","","get")
+	data.forEach(element => {
+		element.name = element.fname+" "+element.lname
+		element.dateAt = moment(element.dateAt).format("YYYY-MM-DD HH:mm:ss")
+		datas.push(element)
+	});
+	tbdDemoDataTable(datas)
+}
+
+
+// function addRow(){
+// 	var jsonObj = new Object();
+// 	counterVal = $("#counter").val()
+// 	if(counterVal===""){
+// 		jsonObj.counter = counter;
+// 		jsonObj.no = "number:"+counter
+// 		counter++
+// 	}else{
+// 		datas = datas.filter(ele=>ele.counter!=counterVal)
+// 		jsonObj.counter = counterVal
+// 		jsonObj.no = "number:"+counterVal
+// 	}
+// 	jsonObj.name = $("#fname").val()+" "+$("#lname").val()
+// 	jsonObj.birth = $("#birth").val()
+// 	jsonObj.age=$("#age").val()
+// 	jsonObj.sex = $("#sex").val()
+// 	jsonObj.date = moment().format("DD MMM YYYY ")
+// 	jsonObj.who = "me"
+// 	datas.push(jsonObj)
+// 	datas.sort((a,b)=>a.counter-b.counter)
+//     tbdDemoDataTable(datas)
+// 	$('#form').trigger("reset");
+
+// }
 
 function addRow(){
+	id = datas.length
 	var jsonObj = new Object();
 	counterVal = $("#counter").val()
-	if(counterVal===""){
-		jsonObj.counter = counter;
-		jsonObj.no = "number:"+counter
-		counter++
-	}else{
-		datas = datas.filter(ele=>ele.counter!=counterVal)
-		jsonObj.counter = counterVal
-		jsonObj.no = "number:"+counterVal
-	}
-	jsonObj.name = $("#fname").val()+" "+$("#lname").val()
-	jsonObj.birth = $("#birth").val()
+	jsonObj.id = (counterVal==="")?++id:counterVal
+	jsonObj.code = "number:"+jsonObj.id
+	jsonObj.fname = $("#fname").val()
+	jsonObj.lname = $("#lname").val()
+	jsonObj.birthDate = $("#birth").val()
 	jsonObj.age=$("#age").val()
 	jsonObj.sex = $("#sex").val()
-	jsonObj.date = moment().format("DD MMM YYYY ")
-	jsonObj.who = "me"
-	datas.push(jsonObj)
-	datas.sort((a,b)=>a.counter-b.counter)
-    tbdDemoDataTable(datas)
-	$('#form').trigger("reset");
-
+	if($("#sex").val()=="ชาย"){
+		jsonObj.sex="male"
+	}
+	else if($("#sex").val()=="หญิง"){
+		jsonObj.sex="female"
+	}else{
+		jsonObj.sex="other"
+	}
+	jsonObj.dateAt = moment().toDate()
+	jsonObj.by = "me"
+	let data = serviceCtrl("addOrUpdateUser",jsonObj,"post")
+	if(data===""){
+		drawTableBygetAllUser()
+		alert("Success!!")
+		$('#form').trigger("reset");
+	}else{
+		alert("cannot save data")
+	}
 }
 
 function editRow(index){
@@ -123,8 +159,7 @@ function editRow(index){
 	var row =  table.row( index )
 	var rowData = row.data();
 	dataName = rowData.name.split(" ")
-	console.log(rowData)
-	$("#counter").val(rowData.counter)
+	$("#counter").val(rowData.id)
 	$("#fname").val(dataName[0])
 	$("#lname").val(dataName[1])
 	$("#birth").val(rowData.birth)
@@ -132,10 +167,22 @@ function editRow(index){
 	$("#sex").val(rowData.sex)
 }
 
+// function deleteRow(index){
+// 	var data = $('#tbdDemo').DataTable().row(index).data()
+// 	datas = datas.filter(e=>e.counter != data.counter)
+// 	tbdDemoDataTable(datas)
+// }
+
 function deleteRow(index){
-	var data = $('#tbdDemo').DataTable().row(index).data()
-	datas = datas.filter(e=>e.counter != data.counter)
-	tbdDemoDataTable(datas)
+	let dataTable = $('#tbdDemo').DataTable().row(index).data()
+	let data = serviceCtrl("deleteUserById",dataTable.id,"post")
+	console.log(data)
+	if(data===""){
+		drawTableBygetAllUser()
+		alert("Delete success!!")
+	}else{
+		alert("Delete Fail!!")
+	}
 }
 
 function ageCount() {
@@ -214,17 +261,12 @@ function serviceCtrl(fn, json, type){
 	    // },
 	    data: JSON.stringify(json),
 	    async: false,
-	    success: function (data, textStatus, jqXHR) {
-	    	console.log(data);
-            console.log(textStatus);
-            console.log(jqXHR);
+	    success: function (data) {
             result = data;
 	    },
-	    error: function (jqXHR, status, error) {
-	        console.error(jqXHR);
-	        result = {};
+	    error: function (data) {
+	        result = data;
 	    }
 	});
-	
-	return result;
+	return result
 }
